@@ -16,6 +16,28 @@ def texts_labels_from_folders(path, folders):
             labels.append(idx)
     return texts, np.array(labels).astype(np.int64)
 
+def numericalize_tok(tokens, max_vocab, min_freq, unk_tok="_unk_", pad_tok="_pad_"):
+    """Takes in text tokens and returns int2token and token2int coverters
+
+        Arguments:
+        tokens(list): List of tokens. Can be a list of strings, or a list of lists of strings.
+        max_vocab(int): Number of tokens to return in the vocab (sorted by frequency)
+        min_freq(int): Minimum number of instances a token must be present in order to be preserved.
+        unk_tok(str): Token to use when unknown tokens are encountered in the source text.
+        pad_tok(str): Token to use when padding sequences.
+    """
+    if isinstance(tokens, str):
+        raise ValueError("Numericalize expects to receive a list of tokens. Received a string instead")
+    if isinstance(tokens[0], list):
+        tokens = [p for o in tok_trn for p in o]
+    freq = Counter(tokens)
+    int2tok = [o for o,c in freq.most_common(max_vocab) if c>min_freq]
+    int2tok.insert(0, pad_tok)
+    int2tok.insert(0, unk_tok)
+    # Default dict lets us use our unknown token for new words
+    tok2int = collections.defaultdict(lambda:0, {v:k for k,v in enumerate(int2tok)})
+    return int2tok, tok2int
+
 class Tokenizer():
     def __init__(self, lang='en'):
         self.re_br = re.compile(r'<\s*br\s*/?>', re.IGNORECASE)
